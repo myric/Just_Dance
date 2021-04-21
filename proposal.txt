@@ -1,0 +1,12 @@
+Proposal
+Iterating on previous work in for the kinetic sculpture, I would like make another attempt at a suspended bird sculpture, this time making it self contained in the body of the bird. Ideally, I'm picturing creating a gyroscopic effect / procession with one electric motor, while another stepper or servo motor might swing a weighted arm to generate movement. (Flapping) This would utilize my previous work on balancing and leverage with the sculpture as well as the experiments I did previously with different motors. Additionally, controlling both motors will probably require multithreading as it would be best if the two motions were wholly independent. If the above work is completed in time, a bonus might be to iterate into a new version which would be triggered by nearby motion.
+
+New Tech
+I would plan on trying to utilize multithreading on this so that the motors can operate fully independently. Also, while the last project used a stepper motor, this one will probably utilize one regular brushed motor and one servo.
+
+Checkpoints
+The coming three weeks are pretty packed, so scheduling for this will be tight. Ideally I would get most of this done this week, well before all the other due dates in the last two weeks of the semester.
+- 4/6 - Create wheel for gyroscope / trial on self-powered suspended platform
+- 4/8 - Create new bird-body frame
+- 4/11 - Test lever motor options
+- 4/18 - Finish enclosure
