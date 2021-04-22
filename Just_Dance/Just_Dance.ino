@@ -32,9 +32,9 @@ BluetoothSerial SerialBT;
 
 // LED section ----
 TaskHandle_t ledTaskHandle = NULL;
-Ticker ledTicker;
+//Ticker ledTicker;
 /** Flag if task should run */
-bool tasksEnabled = false;
+//bool tasksEnabled = false;
 
 Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
 
@@ -50,37 +50,30 @@ int buttonState = HIGH;     // Record button state, and initial the state to hig
 int relayState = LOW;       // Record relay state, and initial the state to low level
 int lastButtonState = HIGH; // Record the button state of last detection
 long lastChangeTime = 0;    // Record the time point for button state change
+int runner = 0; //simple state checker
 
 /**
  * triggerGoLED
  * 
  * called by Ticker ledTicker
  */
-void triggerGoLED() {
-  if (ledTaskHandle != NULL) {
-     xTaskResumeFromISR(ledTaskHandle);
-  }
-}
-
-void ledTask(void *pvParameters) {
-  Serial.println("ledTask loop started");
-  while (1) // ledTask loop
-  {
-    if (tasksEnabled) {
-      // Run the thing
-      goPrettyColors();
-    }
-    // Got sleep again
-    vTaskSuspend(NULL);
-  }
-}
+//void triggerGoLED() {
+//  if (ledTaskHandle != NULL) {
+//     xTaskResumeFromISR(ledTaskHandle);
+//  }
+//}
 
 bool goPrettyColors() {
-//  if relayState -> run all
 
-  if(relayState == HIGH) {
-    digitalWrite(relayPin, relayState); // Update relay state
+//  strip.setBrightness(6);
 
+  while(1) {
+
+//    if(!runner) {
+//      strip.setBrightness(0);
+//      vTaskSuspend(ledTaskHandle);
+//    }
+    
     for (int j = 0; j < 5; j++) {
       for (int i = 0; i < LEDS_COUNT; i++) {
         strip.setLedColorData(i, m_color[j][0], m_color[j][1], m_color[j][2]);// Set color data.
@@ -117,9 +110,9 @@ void setup() {
 
   if (ledTaskHandle == NULL) {
     Serial.println("Failed to start task");
-  } else {
-    // Trigger led to run every 10 seconds.
-    ledTicker.attach(10, triggerGoLED);
+//  } else {
+//    // Trigger led to run every 10 seconds.
+//    ledTicker.attach(10, triggerGoLED);
   }
 
   pinMode(buttonPin, INPUT_PULLUP);           // Set push button pin into input mode
@@ -181,18 +174,44 @@ void loop(){
       buttonState = nowButtonState;
       if (buttonState == LOW) {             // Low level indicates the button is pressed
         relayState = !relayState;           // Reverse relay state
-//        digitalWrite(relayPin, relayState); // Update relay state
+        digitalWrite(relayPin, relayState); // Update relay state
+        if(!runner) {
+          runner = 1;
+          if (ledTaskHandle != NULL) {
+            vTaskResume(ledTaskHandle);
+          }
+        } else {
+          strip.setBrightness(0);
+          vTaskSuspend(ledTaskHandle);
+          runner = 0;
+        }
       }
     }
   }
   lastButtonState = nowButtonState; // Save the state of last button
 
-  if (!tasksEnabled) {
-    // Enable task that will read values from the DHT sensor
-    tasksEnabled = true;
-    if (ledTaskHandle != NULL) {
-      vTaskResume(ledTaskHandle);
-    }
-  }
+//  if (!tasksEnabled) {
+//    // Enable task that will read values from the DHT sensor
+//    tasksEnabled = true;
+//    if (ledTaskHandle != NULL) {
+//      vTaskResume(ledTaskHandle);
+//    }
+//  }
   
+}
+
+void ledTask(void *pvParameters) {
+  Serial.println("ledTask loop started");
+
+  goPrettyColors();
+  
+//  while (1) // ledTask loop
+//  {
+//    if (tasksEnabled) {
+//      // Run the thing
+//      goPrettyColors();
+//    }
+//    // Got sleep again
+//    vTaskSuspend(NULL);
+//  }
 }
