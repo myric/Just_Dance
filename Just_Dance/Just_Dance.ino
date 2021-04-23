@@ -32,6 +32,7 @@ BluetoothSerial SerialBT;
 
 // LED section ----
 TaskHandle_t ledTaskHandle = NULL;
+TaskHandle_t turnoffHandle = NULL;
 //Ticker ledTicker;
 /** Flag if task should run */
 //bool tasksEnabled = false;
@@ -39,7 +40,7 @@ TaskHandle_t ledTaskHandle = NULL;
 Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
 
 int m_color[5][3] = { {255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 255}, {0, 0, 0} };
-int delayval = 100;
+int delayval = 10;
 
 int nowButtonState; // creating as global so not declared in standalone function
 
@@ -62,28 +63,6 @@ int runner = 0; //simple state checker
 //     xTaskResumeFromISR(ledTaskHandle);
 //  }
 //}
-
-bool goPrettyColors() {
-
-//  strip.setBrightness(6);
-
-  while(1) {
-
-//    if(!runner) {
-//      strip.setBrightness(0);
-//      vTaskSuspend(ledTaskHandle);
-//    }
-    
-    for (int j = 0; j < 5; j++) {
-      for (int i = 0; i < LEDS_COUNT; i++) {
-        strip.setLedColorData(i, m_color[j][0], m_color[j][1], m_color[j][2]);// Set color data.
-        strip.show();   // Send color data to LED, and display.
-        delay(delayval);// Interval time of each LED.
-      }
-      delay(250);       // Interval time of each group of colors.
-    }
-  }
-}
 
 // END LED section ----
 
@@ -110,9 +89,23 @@ void setup() {
 
   if (ledTaskHandle == NULL) {
     Serial.println("Failed to start task");
-//  } else {
-//    // Trigger led to run every 10 seconds.
-//    ledTicker.attach(10, triggerGoLED);
+  } else {
+    vTaskSuspend(ledTaskHandle);
+  }
+
+  xTaskCreatePinnedToCore(
+      turnoffTask,                       /* Function to implement the task */
+      "turnoffTask ",                    /* Name of the task */
+      4000,                           /* Stack size in words */
+      NULL,                           /* Task input parameter */
+      5,                              /* Priority of the task */
+      &turnoffHandle,                /* Task handle. */
+      1);                             /* Core where the task should run */
+
+  Serial.println("created second task");
+
+  if (ledTaskHandle == NULL) {
+    Serial.println("Failed to start task");
   }
 
   pinMode(buttonPin, INPUT_PULLUP);           // Set push button pin into input mode
@@ -178,40 +171,44 @@ void loop(){
         if(!runner) {
           runner = 1;
           if (ledTaskHandle != NULL) {
+            strip.setBrightness(6);
             vTaskResume(ledTaskHandle);
           }
         } else {
-          strip.setBrightness(0);
           vTaskSuspend(ledTaskHandle);
+          vTaskResume(turnoffHandle);
           runner = 0;
         }
       }
     }
   }
   lastButtonState = nowButtonState; // Save the state of last button
-
-//  if (!tasksEnabled) {
-//    // Enable task that will read values from the DHT sensor
-//    tasksEnabled = true;
-//    if (ledTaskHandle != NULL) {
-//      vTaskResume(ledTaskHandle);
-//    }
-//  }
   
 }
 
 void ledTask(void *pvParameters) {
   Serial.println("ledTask loop started");
 
-  goPrettyColors();
-  
-//  while (1) // ledTask loop
-//  {
-//    if (tasksEnabled) {
-//      // Run the thing
-//      goPrettyColors();
-//    }
-//    // Got sleep again
-//    vTaskSuspend(NULL);
-//  }
+  while(1) {
+    for (int j = 0; j < 5; j++) {
+      for (int i = 0; i < LEDS_COUNT; i++) {
+        strip.setLedColorData(i, m_color[j][0], m_color[j][1], m_color[j][2]);// Set color data.
+        strip.show();   // Send color data to LED, and display.
+        delay(delayval);// Interval time of each LED.
+      }
+      delay(10);       // Interval time of each group of colors.
+    }
+  }
+}
+
+void turnoffTask(void *pvParameters) {
+  Serial.println("now turning off");
+
+  for(int i = 0; i < LEDS_COUNT; i++) {
+    strip.setLedColorData(i, 0, 0, 0);
+    strip.setBrightness(0);
+    strip.show();
+  }
+
+  vTaskSuspend(NULL);
 }
