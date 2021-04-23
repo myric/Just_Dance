@@ -52,6 +52,7 @@ int relayState = LOW;       // Record relay state, and initial the state to low 
 int lastButtonState = HIGH; // Record the button state of last detection
 long lastChangeTime = 0;    // Record the time point for button state change
 int runner = 0; //simple state checker
+int topbright = 10;
 
 /**
  * triggerGoLED
@@ -74,7 +75,7 @@ void setup() {
 //  LED Section ---
 
   strip.begin();
-  strip.setBrightness(6);
+  strip.setBrightness(topbright);
 
   xTaskCreatePinnedToCore(
       ledTask,                       /* Function to implement the task */
@@ -171,7 +172,7 @@ void loop(){
         if(!runner) {
           runner = 1;
           if (ledTaskHandle != NULL) {
-            strip.setBrightness(6);
+            strip.setBrightness(topbright);
             vTaskResume(ledTaskHandle);
           }
         } else {
